@@ -11,5 +11,6 @@ module.exports = {
             test: /\.fs(x|proj)?$/,
             use: "fable-loader"
         }]
-    }
+    },
+    devtool: "source-map"
 }
