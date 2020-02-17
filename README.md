@@ -28,23 +28,29 @@ npm install react react-dom
 
 ## Documentation
 
-### Compiler
+Here we list the compiler repo, together with the most important Fable libraries.
+
+### Compiler and Core Library
 
 * [Fable](https://github.com/fable-compiler/Fable)
+  * [fable-compiler]: NPM package
+  * [Fable.Core]: Nuget package
 
-### Basics
+### Basic Libraries
 
-* [Fable.Browser.*](https://github.com/fable-compiler/fable-browser)
-  * Many packages Fable.Browser.[Dom|Event|...]
+* [Fable.Browser.*](https://github.com/fable-compiler/fable-browser): Contains Fable wrappers the socalled [Web API](https://developer.mozilla.org/en-US/docs/Web/API) in the browsers.
 * [Fable.Fetch](https://github.com/fable-compiler/fable-fetch)
+* [Fable.Promise](https://github.com/fable-compiler/fable-promise)
+* [Fable.Date](https://github.com/fable-compiler/fable-date)
+* [Fable.SimpleHttp](https://github.com/Zaid-Ajaj/Fable.SimpleHttp)
 
-### React
+### React Libraries
 
 This is needed to write the render (`view :: Model -> (Msg -> unit) -> ReactElement`) function
 
 * [Fable.React](https://github.com/fable-compiler/fable-react)
 
-### Elmish.React
+### Elmish.React Libraries
 
 This is needed to implement the Elm Architecture
 
