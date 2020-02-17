@@ -1,4 +1,6 @@
-# Fable/Elmish Getting Started
+# Fable/Elmish/React: Getting Started
+
+Note: You have to know about both `.NET` and `Node.js` to be succesfull using Fable to write browser applications. Also you need to know both Fable/F# and .NET/F#.
 
 Requirements
 
@@ -7,7 +9,7 @@ Requirements
 
 ## Dependencies
 
-The Fable/Elmish client-side application has the following dependencies.
+A Fable/Elmish/React client-side application has the following dependencies.
 
 ### .NET
 
@@ -33,12 +35,12 @@ Here we list the compiler repo, together with the most important Fable libraries
 ### Compiler and Core Library
 
 * [Fable](https://github.com/fable-compiler/Fable)
-  * [fable-compiler]: NPM package
-  * [Fable.Core]: Nuget package
+  * `fable-compiler`: NPM package used a dev dependency in `package.json`.
+  * `Fable.Core`: Nuget package that is similar to FSharp.Core in .NET.
 
 ### Basic Libraries
 
-* [Fable.Browser.*](https://github.com/fable-compiler/fable-browser): Contains Fable wrappers the socalled [Web API](https://developer.mozilla.org/en-US/docs/Web/API) in the browsers.
+* [Fable.Browser.*](https://github.com/fable-compiler/fable-browser): Contains Fable wrappers for the socalled [Web API](https://developer.mozilla.org/en-US/docs/Web/API) in the browsers (not all of the API surface is implemented).
 * [Fable.Fetch](https://github.com/fable-compiler/fable-fetch)
 * [Fable.Promise](https://github.com/fable-compiler/fable-promise)
 * [Fable.Date](https://github.com/fable-compiler/fable-date)
