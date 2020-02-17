@@ -1,72 +1,60 @@
 module App
 
-open Browser.Dom
+// open Browser.Dom
 
-let btnPlus = document.getElementById "btnPlus"
-let btnMinus = document.getElementById "btnMinus"
-let textCounter = document.getElementById "textCounter"
+// let btnPlus = document.getElementById "btnPlus"
+// let btnMinus = document.getElementById "btnMinus"
+// let textCounter = document.getElementById "textCounter"
 
-let mutable counter = 0
+// let mutable counter = 0
 
-btnPlus.addEventListener ("click", (fun _ ->
-    counter <- counter + 1
-    textCounter.innerText <- (string counter)
-    ))
+// btnPlus.addEventListener ("click", (fun _ ->
+//     counter <- counter + 1
+//     textCounter.innerText <- (string counter)
+//     ))
 
-btnMinus.addEventListener ("click", (fun _ ->
-    counter <- counter - 1
-    textCounter.innerText <- (string counter)
-    ))
+// btnMinus.addEventListener ("click", (fun _ ->
+//     counter <- counter - 1
+//     textCounter.innerText <- (string counter)
+//     ))
 
-// NOTE: Copied from fable2-samples browser
+//
+// Elm Architecture
+//
 
-open Fable.Core.JsInterop
-open Fable.Import
+type Model =
+    { Counter: int }
 
-let window = Browser.Dom.window
+type Msg =
+    | Increment
+    | Decrement
 
-// Get our canvas context
-// As we'll see later, myCanvas is mutable hence the use of the mutable keyword
-// the unbox keyword allows to make an unsafe cast. Here we assume that getElementById will return an HTMLCanvasElement
-let mutable myCanvas : Browser.Types.HTMLCanvasElement = unbox window.document.getElementById "myCanvas"  // myCanvas is defined in public/index.html
+let init () =
+    { Counter = 42 }
 
-// Get the context
-let ctx = myCanvas.getContext_2d()
+let update msg model =
+    match msg with
+    | Increment -> { model with Counter = model.Counter + 1 }
+    | Decrement -> { model with Counter = model.Counter - 1 }
 
-// All these are immutables values
-let w = myCanvas.width
-let h = myCanvas.height
-let steps = 20
-let squareSize = 20
+// dotnet add package Fable.React//
+open Fable.React // Helpers to create react elements (str, button, div etc...)
+open Fable.React.Props
 
-// gridWidth needs a float wo we cast tour int operation to a float using the float keyword
-let gridWidth = float (steps * squareSize)
+// TODO: Add event listeners
+let view model dispatch =
+    div []
+        [
+            button [ OnClick (fun _ -> dispatch Increment) ] [ str "+"]
+            h2 [] [ ofInt model.Counter ]
+            button [ OnClick (fun _ -> dispatch Decrement) ] [ str "-"]
+        ]
 
-// resize our canvas to the size of our grid
-// the arrow <- indicates we're mutating a value. It's a special operator in F#.
-myCanvas.width <- gridWidth
-myCanvas.height <- gridWidth
+// dotnet add package Fable.Elmish.React
+open Elmish
+open Elmish.React
 
-// print the grid size to our debugger console
-printfn "steps: %i" steps
+Program.mkSimple init update view
+|> Program.withReactSynchronous "app"
+|> Program.run
 
-// prepare our canvas operations
-[0..steps] // this is a list
-  |> Seq.iter( fun step -> // we iter through the list using an anonymous function
-      let v = float (step * squareSize)
-      ctx.moveTo(v, 0.)
-      ctx.lineTo(v, gridWidth)
-      ctx.moveTo(0., v)
-      ctx.lineTo(gridWidth, v)
-    )
-ctx.strokeStyle <- !^"#ddd" // color
-
-// draw our grid
-ctx.stroke()
-
-// write Fable
-ctx.textAlign <- "center"
-ctx.fillText("Fable on Canvas", gridWidth * 0.5, gridWidth * 0.5)
-
-// log to console
-printfn "done!"
