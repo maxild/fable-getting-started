@@ -1,5 +1,10 @@
 .ionide/
 .vs/
+.idea/
+
+# we want launch.json and tasks.json committted
+#.vscode/
+
 .fable
 
 node_modules/

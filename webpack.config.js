@@ -1,4 +1,4 @@
-var path = require("path");
+const path = require("path");
 
 module.exports = {
     mode: "none",
@@ -13,4 +13,4 @@ module.exports = {
         }]
     },
     devtool: "source-map"
-}
+};
