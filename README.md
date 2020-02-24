@@ -88,3 +88,17 @@ npm start
 ```
 
 If you already ran `npm install` then you don't need to run it again. `npm start` will start the developement mode by invoking `webpack-dev-server`: the webpack development server that starts a lightweight local server at http://localhost:8080 from which the server will serve the client application
+
+## Great Fonts in VsCode and Rider
+
+```
+choco install firacode-ttf
+```
+
+```json
+"editor.fontFamily": "'Fira Code', 'Droid Sans Mono', 'Courier New', monospace, 'Droid Sans Fallback'",
+"editor.fontWeight": "300" , // Light
+"editor.lineHeight": 20,
+"editor.fontLigatures": true,
+"editor.fontSize": 12,
+```
