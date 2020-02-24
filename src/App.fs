@@ -1,6 +1,12 @@
 module App
 
-open Fable.React
+// NOTE: We are using Feliz now...
+//open Fable.React
+
+open Zanaptak.TypedCssClasses
+
+type Bulma = CssClasses<"https://cdnjs.cloudflare.com/ajax/libs/bulma/0.8.0/css/bulma.min.css", Naming.PascalCase>
+type FA = CssClasses<"https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css", Naming.PascalCase>
 
 //
 // Elm Architecture
@@ -120,7 +126,7 @@ type prop with
 let title =
     // <p class="title">Elmish To-Do App</p>
     Html.p [
-        prop.className "title"
+        prop.className Bulma.Title
         prop.text "Elmish To-Do App"
     ]
 
@@ -134,13 +140,13 @@ let newTodoInput (currentNewTodo: string) (dispatch: Msg -> unit) =
     //        </div>
     //    </div>
     Html.div [
-        prop.classes ["field"; "has-addons"]
+        prop.classes [ Bulma.Field; Bulma.HasAddons]
         prop.children [
             Html.div [
-                prop.classes ["control"; "is-expanded"]
+                prop.classes [Bulma.Control; Bulma.IsExpanded]
                 prop.children [
                     Html.input [
-                        prop.classes ["input"; "is-medium"]
+                        prop.classes [Bulma.Input; Bulma.IsMedium]
                         prop.valueOrDefault currentNewTodo
                         // TODO: 13.0 is enter (remove magic float). It should be an int!!!
                         prop.onKeyUp (fun ev -> if ev.keyCode = 13.0 then dispatch AddNewTodo)
@@ -149,12 +155,12 @@ let newTodoInput (currentNewTodo: string) (dispatch: Msg -> unit) =
                 ]
             ]
             Html.div [
-                prop.classes ["control"]
+                prop.classes [Bulma.Control]
                 prop.children [
                     Html.button [
-                        prop.classes ["button"; "is-primary"; "is-medium"]
+                        prop.classes [Bulma.Button; Bulma.IsPrimary; Bulma.IsMedium]
                         prop.onClick (fun _ -> dispatch AddNewTodo)
-                        prop.iconClasses ["fa"; "fa-plus"]
+                        prop.iconClasses [FA.Fa; FA.FaPlus]
                     ]
                 ]
             ]
@@ -165,14 +171,13 @@ let newTodoInput (currentNewTodo: string) (dispatch: Msg -> unit) =
 let renderTodo (todo: Todo) (dispatch: Msg -> unit) =
     // old DSL syntax here
     // 2 column layout: 1. description & 2. buttons
-    // TODO: Add todo is missing
     div [ "box" ] [
         div ["columns"; "is-mobile"] [
             // text
             div ["column"] [
                 Html.p [
                     if todo.Completed then prop.style [ style.textDecoration.lineThrough ]
-                    prop.className "subtitle"
+                    prop.className Bulma.Subtitle
                     prop.text todo.Description
                 ]
             ]
@@ -180,14 +185,15 @@ let renderTodo (todo: Todo) (dispatch: Msg -> unit) =
             div ["column"; "is-narrow"] [
                 div ["buttons"] [
                     Html.button [
-                        prop.classes ["button"]
+                        prop.classes [Bulma.Button]
                         prop.onClick (fun _ -> dispatch <| ToggleCompleted todo.Id)
-                        prop.iconClasses ["fa"; "fa-plus"]
+                        // TODO: Find better icon class here...
+                        prop.iconClasses [FA.Fa; FA.FaAsterisk]
                     ]
                     Html.button [
-                        prop.classes ["button"; "is-danger"]
+                        prop.classes [Bulma.Button; Bulma.IsDanger]
                         prop.onClick (fun _ -> dispatch <| DeleteTodo todo.Id)
-                        prop.iconClasses ["fa"; "fa-times"]
+                        prop.iconClasses [FA.Fa; FA.FaPlus]
                     ]
                 ]
             ]
@@ -219,6 +225,6 @@ open Elmish
 open Elmish.React
 
 Program.mkSimple init update render
-|> Program.withReactSynchronous "app"
+|> Program.withReactSynchronous "elmish-app"
 |> Program.run
 
