@@ -41,11 +41,19 @@ type Todo =
       Description: string
       Completed: bool }
 
+// Two options for handling errors
+// 1. RemoteData<Result<string, string>>
+// 2. Add another union case for 'FailedWhileLoadingData of string'...or maybe to generic params
+type RemoteData<'T> =
+    | HasNotLoaded
+    | Loading
+    | FinishedLoading of 'T
+
 // a.k.a. Model
 type State =
     { Todos: Todo list
       NewTodoDescription: string
-      ReponseText: string }
+      ResponseText: RemoteData<Result<string, string>> }
 
 //
 // ------------ State/Model helpers -----------
@@ -90,33 +98,48 @@ let withCompletedFlipped todoId state =
 
 // List of all the events in the UI
 type Msg =
+    // To-do app example
     | NewTodoChanged of string // SetNewTodo
     | AddNewTodo
     //| AddNewTodoTwice // artificial command for learning purposes
     | DeleteTodo of TodoId
     | ToggleCompleted of TodoId // An alternative is CompleteTodo/UncompleteTodo
+    // Http example
     | GetData
     | DataReceived of string
+    | ErrorWhileReceivingData of string
+    
 //
 // ---------- Define initial state -------
-//
-
-
-let init () : State * Cmd<Msg> =
-    { Todos = []
-      NewTodoDescription = ""
-      ReponseText = "Not received yet" }, Cmd.none // This could be an initial command getting data from a server 
-
-//
-// ------------ Compute next state ----------------
 //
 
 let getData () =
     async {
         do! Async.Sleep 2000
+        // Http.get will never throw exception, any failure is communicated as statusCode
         let! statusCode, responseText = Http.get "/data.txt"
-        return DataReceived responseText
+        return
+            if (statusCode = 200)
+            then DataReceived responseText
+            else ErrorWhileReceivingData <| sprintf "Something weird happened: %i" statusCode
     }
+
+let withGetDataCmd state =
+    { state with ResponseText = Loading }, Cmd.OfAsync.perform getData () id
+
+let withoutCmd state =
+    state, Cmd.none
+
+let init () : State * Cmd<Msg> =
+    { Todos = []
+      NewTodoDescription = ""
+      ResponseText = HasNotLoaded }
+    |> withGetDataCmd
+
+//
+// ------------ Compute next state ----------------
+//
+
 
 // The dispatch of events (messages) can happen asynchronously!!! But events in the update -> newState -> render -> dispatch are sync 
 // Command (Cmd) tell the runtime, what command should be executed after this update
@@ -129,27 +152,38 @@ let update (msg: Msg) (state: State) : State * Cmd<Msg> =
     match msg with
     | NewTodoChanged description ->
         state
-        |> withNewTodoOf description, Cmd.none
+        |> withNewTodoOf description
+        |> withoutCmd
     | AddNewTodo ->
         state
         |> withAddedTodoOf state.NewTodoDescription
-        |> withClearedDescription, Cmd.none
-    | GetData ->
-        // NOTE: The API is the way it is because of consistency with Task and
-        // Promise implementation that bot start immediately (cold vs hot start)
-        state, Cmd.OfAsync.perform getData () id 
+        |> withClearedDescription
+        |> withoutCmd
 //    | AddNewTodoTwice ->
 //        state, Cmd.batch [ Cmd.ofMsg AddNewTodo; Cmd.ofMsg AddNewTodo ]
     | DeleteTodo id ->
         let newTodos =
             state.Todos
             |> List.filter (fun todo -> todo.Id <> id)
-        { state with Todos = newTodos }, Cmd.none
+        { state with Todos = newTodos }
+        |> withoutCmd
     | ToggleCompleted id ->
         state 
-        |> withCompletedFlipped id, Cmd.none
+        |> withCompletedFlipped id
+        |> withoutCmd
+        
+    | GetData ->
+        // NOTE: The API is the way it is because of consistency with Task and
+        // Promise implementation that bot start immediately (cold vs hot start)
+        state
+        |> withGetDataCmd
+    // The following 2 cases will transform the result of the command
+    | ErrorWhileReceivingData msg ->
+        { state with ResponseText = FinishedLoading (Error msg) }
+        |> withoutCmd
     | DataReceived responseText ->
-        { state with ReponseText = responseText }, Cmd.none
+        { state with ResponseText = FinishedLoading (Ok responseText) }
+        |> withoutCmd
         
 
 //
@@ -269,6 +303,20 @@ let todoList (todos: Todo list) (dispatch: Msg -> unit) =
         prop.children [ for todo in todos -> renderTodo todo dispatch ]
     ]
 
+let renderResponseText (responseText: RemoteData<Result<string, string>>) =
+    match responseText with
+    | HasNotLoaded ->
+        Html.none
+    | Loading ->
+        Html.div "Some fancy spinner"
+    | FinishedLoading (Error msg) ->
+        Html.div [
+            prop.style [style.color.red]
+            prop.text msg
+        ]
+    | FinishedLoading (Ok data) ->
+        Html.div data
+
 let render (state: State) (dispatch: Msg -> unit) =
     //<div style="padding: 20px;">
     //    <Title />
@@ -286,8 +334,10 @@ let render (state: State) (dispatch: Msg -> unit) =
                 todoList state.Todos dispatch
             ]
         ]
+
+        // Http get response        
+        renderResponseText state.ResponseText
         
-        Html.div state.ReponseText
         Html.button [
             prop.onClick (fun _ -> dispatch GetData)
             prop.text "Fetch data"    
