@@ -19,9 +19,9 @@ type FA = CssClasses<"https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1
 // Main state DSL
 //   * Fable.React.Elmish (Fable.Elmish)
 
-// TODOs
-//  filter todos (completed, not completed)
-//  See other versions of the todo list app
+//
+// ---------- Model (a.k.a. State, ViewModel) ---------
+//
 
 type TodoId = TodoId of System.Guid
 
@@ -30,12 +30,14 @@ type Todo =
       Description: string
       Completed: bool }
 
-// a.k.a. Model, ViewModel
+// a.k.a. Model
 type State =
     { Todos: Todo list
       NewTodoDescription: string }
 
-// TODO: Maybe create module State functions
+//
+// ------------ State/Model helpers -----------
+//
 
 let withNewTodoOf description (state: State) =
     { state with NewTodoDescription = description }
@@ -49,18 +51,6 @@ let withAddedTodoOf (description: string) (state: State) : State =
 
 let withClearedDescription (state: State) =
     { state with NewTodoDescription = "" }
-
-// List of all the events in the UI
-type Msg =
-    | NewTodoChanged of string // SetNewTodo
-    | AddNewTodo
-    | DeleteTodo of TodoId
-    | ToggleCompleted of TodoId // An alternative is CompleteTodo/UncompleteTodo
-
-// initialState
-let init () =
-    { Todos = []
-      NewTodoDescription = "" }
 
 // NOTE: So much easier just to map/traverse the list and change a single item
 // find an item and calculate (head-list, itemOpt, tail-list)
@@ -82,25 +72,58 @@ let withCompletedFlipped todoId state =
         )
     { state with Todos = newTodos }    
 
+//
+// ---------- Define events ---------
+//
+
+// List of all the events in the UI
+type Msg =
+    | NewTodoChanged of string // SetNewTodo
+    | AddNewTodo
+    | DeleteTodo of TodoId
+    | ToggleCompleted of TodoId // An alternative is CompleteTodo/UncompleteTodo
+
+//
+// ---------- Define initial state -------
+//
+
+open Elmish // Cmd
+
+let init () : State * Cmd<Msg> =
+    { Todos = []
+      NewTodoDescription = "" }, Cmd.none // This could be an initial command getting data from a server 
+
+//
+// ------------ Compute next state ----------------
+//
+
+// Command (Cmd) tell the runtime, what command should be executed after this update
+// NOTE: The update function is running synchronously in the Elm architecture. Any Asynchronous events
+//       (subscriptions, XHR requests/responses, delayed functions etc) are handled by command-architecture, and the runtime)
+// NOTE: The update function is (in principle) a pure function. 
 // This update (a.k.a. compute) can be tested separately (without using the DOM)
 // It doesn't even have to know about Fable (and therefore can be tested on .NET Core)
-let update (msg: Msg) (state: State) : State =
+let update (msg: Msg) (state: State) : State * Cmd<Msg> =
     match msg with
     | NewTodoChanged description ->
         state
-        |> withNewTodoOf description
+        |> withNewTodoOf description, Cmd.none
     | AddNewTodo ->
         state
         |> withAddedTodoOf state.NewTodoDescription
-        |> withClearedDescription
+        |> withClearedDescription, Cmd.none
     | DeleteTodo id ->
         let newTodos =
             state.Todos
             |> List.filter (fun todo -> todo.Id <> id)
-        { state with Todos = newTodos }
+        { state with Todos = newTodos }, Cmd.none
     | ToggleCompleted id ->
         state 
-        |> withCompletedFlipped id
+        |> withCompletedFlipped id, Cmd.none
+
+//
+// ------------ React DSL ---------------
+//            
 
 // dotnet add package Fable.React
 //open Fable.React // Helpers to create react elements (str, button, div etc...)
@@ -236,11 +259,15 @@ let render (state: State) (dispatch: Msg -> unit) =
         ]
     ]
 
+//
+// --------- Elmish -------------
+//
+
 // dotnet add package Fable.Elmish.React
 open Elmish
 open Elmish.React
 
-Program.mkSimple init update render
+Program.mkProgram init update render
 |> Program.withReactSynchronous "elmish-app"
 |> Program.run
 
