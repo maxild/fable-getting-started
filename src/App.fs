@@ -55,20 +55,32 @@ type Msg =
     | NewTodoChanged of string // SetNewTodo
     | AddNewTodo
     | DeleteTodo of TodoId
-    | ToggleCompleted of TodoId
+    | ToggleCompleted of TodoId // An alternative is CompleteTodo/UncompleteTodo
 
 // initialState
 let init () =
     { Todos = []
       NewTodoDescription = "" }
 
+// NOTE: So much easier just to map/traverse the list and change a single item
 // find an item and calculate (head-list, itemOpt, tail-list)
-let find2 (p: 'a -> bool) (xs: 'a list) : 'a list * 'a option * 'a list =
-    let rec find2' (p: 'a -> bool) (acc: 'a list) (xs: 'a list) : 'a list * 'a option * 'a list =
-        match xs with
-        | [] -> (acc, None, [])
-        | x::xs -> if p x then (acc, Some x, xs) else find2' p (acc @ [x]) xs
-    find2' p [] xs
+//let find2 (p: 'a -> bool) (xs: 'a list) : 'a list * 'a option * 'a list =
+//    let rec find2' (p: 'a -> bool) (acc: 'a list) (xs: 'a list) : 'a list * 'a option * 'a list =
+//        match xs with
+//        | [] -> (acc, None, [])
+//        | x::xs -> if p x then (acc, Some x, xs) else find2' p (acc @ [x]) xs
+//    find2' p [] xs
+
+let withCompletedFlipped todoId state =
+    let newTodos =
+        state.Todos 
+        |> List.map (fun todo -> 
+            if todo.Id = todoId then
+                { todo with Completed = not todo.Completed }
+            else 
+                todo
+        )
+    { state with Todos = newTodos }    
 
 // This update (a.k.a. compute) can be tested separately (without using the DOM)
 // It doesn't even have to know about Fable (and therefore can be tested on .NET Core)
@@ -87,14 +99,8 @@ let update (msg: Msg) (state: State) : State =
             |> List.filter (fun todo -> todo.Id <> id)
         { state with Todos = newTodos }
     | ToggleCompleted id ->
-        let (head_list, itemOpt, tail_list) =
-            state.Todos
-            |> find2 (fun todo -> todo.Id = id)
-        match itemOpt with
-        | Some todo ->
-            let newTodo = { todo with Completed = not todo.Completed }
-            { state with Todos = head_list @ [newTodo] @ tail_list }
-        | None -> failwith "UNEXPECTED error"
+        state 
+        |> withCompletedFlipped id
 
 // dotnet add package Fable.React
 //open Fable.React // Helpers to create react elements (str, button, div etc...)
@@ -173,30 +179,40 @@ let renderTodo (todo: Todo) (dispatch: Msg -> unit) =
     // 2 column layout: 1. description & 2. buttons
     div [ "box" ] [
         div ["columns"; "is-mobile"] [
-            // text
             div ["column"] [
                 Html.p [
                     if todo.Completed then prop.style [ style.textDecoration.lineThrough ]
+                    //if todo.Completed then prop.style [style.color.lightGray]
                     prop.className Bulma.Subtitle
                     prop.text todo.Description
                 ]
             ]
-            // button
             div ["column"; "is-narrow"] [
-                div ["buttons"] [
-                    Html.button [
-                        prop.classes [Bulma.Button]
-                        prop.onClick (fun _ -> dispatch <| ToggleCompleted todo.Id)
-                        // TODO: Find better icon class here...
-                        prop.iconClasses [FA.Fa; FA.FaAsterisk]
-                    ]
-                    Html.button [
-                        prop.classes [Bulma.Button; Bulma.IsDanger]
-                        prop.onClick (fun _ -> dispatch <| DeleteTodo todo.Id)
-                        prop.iconClasses [FA.Fa; FA.FaPlus]
-                    ]
-                ]
+                // Cannot work out icons for complete/uncomplete
+//                Html.button [
+//                    prop.classes [Bulma.; Bulma.IsMedium]
+//                    prop.onClick (fun _ -> dispatch <| ToggleCompleted todo.Id)
+//                    // TODO: Find better icon class here...
+//                    //prop.iconClasses [FA.Fa; FA.FaAsterisk]
+//                ]
+                
+                Html.input [
+                    prop.type'.checkbox
+                    prop.onCheckedChange (fun _ -> dispatch <| ToggleCompleted todo.Id) 
+                ]        
+                Html.text "Completed"
             ]
+            div [ "column"; "is-narrow" ] [
+                // This works too!
+//                Html.a [ 
+//                    prop.classes [Bulma.Delete; Bulma.IsMedium]
+//                    prop.onClick (fun _ -> dispatch (DeleteTodo todo.Id))
+//                ]
+                Html.button [
+                        prop.classes [Bulma.Delete; Bulma.IsMedium]
+                        prop.onClick (fun _ -> dispatch <| DeleteTodo todo.Id)
+                ]
+            ]   
         ]
     ]
 
