@@ -31,4 +31,4 @@ let counter = React.functionComponent(fun () ->
 open Browser.Dom
 
 // <Counter /> in JSX
-ReactDOM.render(counter, document.getElementById "app")
+ReactDOM.render(counter, document.getElementById "elmish-app")

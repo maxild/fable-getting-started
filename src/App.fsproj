@@ -8,6 +8,7 @@
     </ItemGroup>
     <ItemGroup>
       <PackageReference Include="Fable.Elmish.React" Version="3.0.1" />
+      <PackageReference Include="Fable.SimpleHttp" Version="3.0.0" />
 <!--      <PackageReference Include="Fable.React" Version="5.3.6" />-->
       <PackageReference Include="Feliz" Version="0.68.10" />
       <PackageReference Include="Zanaptak.TypedCssClasses" Version="0.2.0" />

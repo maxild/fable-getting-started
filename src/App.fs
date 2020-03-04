@@ -1,12 +1,23 @@
 module App
 
+// dotnet add package Fable.React
+//open Fable.React // Helpers to create react elements (str, button, div etc...)
+//open Fable.React.Props
+
 // NOTE: We are using Feliz now...
-//open Fable.React
+// dotnet add package Feliz
+open Feliz // Alternative DSL for writing 'JSX'
+
+open Elmish // Cmd
+open Elmish.React
+
+open Fable.SimpleHttp
 
 open Zanaptak.TypedCssClasses
 
 type Bulma = CssClasses<"https://cdnjs.cloudflare.com/ajax/libs/bulma/0.8.0/css/bulma.min.css", Naming.PascalCase>
 type FA = CssClasses<"https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css", Naming.PascalCase>
+
 
 //
 // Elm Architecture
@@ -33,7 +44,8 @@ type Todo =
 // a.k.a. Model
 type State =
     { Todos: Todo list
-      NewTodoDescription: string }
+      NewTodoDescription: string
+      ReponseText: string }
 
 //
 // ------------ State/Model helpers -----------
@@ -80,23 +92,33 @@ let withCompletedFlipped todoId state =
 type Msg =
     | NewTodoChanged of string // SetNewTodo
     | AddNewTodo
+    //| AddNewTodoTwice // artificial command for learning purposes
     | DeleteTodo of TodoId
     | ToggleCompleted of TodoId // An alternative is CompleteTodo/UncompleteTodo
-
+    | GetData
+    | DataReceived of string
 //
 // ---------- Define initial state -------
 //
 
-open Elmish // Cmd
 
 let init () : State * Cmd<Msg> =
     { Todos = []
-      NewTodoDescription = "" }, Cmd.none // This could be an initial command getting data from a server 
+      NewTodoDescription = ""
+      ReponseText = "Not received yet" }, Cmd.none // This could be an initial command getting data from a server 
 
 //
 // ------------ Compute next state ----------------
 //
 
+let getData () =
+    async {
+        do! Async.Sleep 2000
+        let! statusCode, responseText = Http.get "/data.txt"
+        return DataReceived responseText
+    }
+
+// The dispatch of events (messages) can happen asynchronously!!! But events in the update -> newState -> render -> dispatch are sync 
 // Command (Cmd) tell the runtime, what command should be executed after this update
 // NOTE: The update function is running synchronously in the Elm architecture. Any Asynchronous events
 //       (subscriptions, XHR requests/responses, delayed functions etc) are handled by command-architecture, and the runtime)
@@ -112,6 +134,12 @@ let update (msg: Msg) (state: State) : State * Cmd<Msg> =
         state
         |> withAddedTodoOf state.NewTodoDescription
         |> withClearedDescription, Cmd.none
+    | GetData ->
+        // NOTE: The API is the way it is because of consistency with Task and
+        // Promise implementation that bot start immediately (cold vs hot start)
+        state, Cmd.OfAsync.perform getData () id 
+//    | AddNewTodoTwice ->
+//        state, Cmd.batch [ Cmd.ofMsg AddNewTodo; Cmd.ofMsg AddNewTodo ]
     | DeleteTodo id ->
         let newTodos =
             state.Todos
@@ -120,17 +148,14 @@ let update (msg: Msg) (state: State) : State * Cmd<Msg> =
     | ToggleCompleted id ->
         state 
         |> withCompletedFlipped id, Cmd.none
+    | DataReceived responseText ->
+        { state with ReponseText = responseText }, Cmd.none
+        
 
 //
 // ------------ React DSL ---------------
 //            
 
-// dotnet add package Fable.React
-//open Fable.React // Helpers to create react elements (str, button, div etc...)
-//open Fable.React.Props
-
-// dotnet add package Feliz
-open Feliz // Alternative DSL for writing 'JSX'
 
 // Helper function using the old syntax of the Fable.React DSL
 let div (classes: string list) (children: Fable.React.ReactElement list) =
@@ -250,22 +275,29 @@ let render (state: State) (dispatch: Msg -> unit) =
     //    <NewTodoInput />
     //    <TodoList />
     //</div>
+    
     Html.div [
-        prop.style [ style.padding 20 ]
-        prop.children [
-            title
-            newTodoInput state.NewTodoDescription dispatch
-            todoList state.Todos dispatch
+    
+        Html.div [
+            prop.style [ style.padding 20 ]
+            prop.children [
+                title
+                newTodoInput state.NewTodoDescription dispatch
+                todoList state.Todos dispatch
+            ]
+        ]
+        
+        Html.div state.ReponseText
+        Html.button [
+            prop.onClick (fun _ -> dispatch GetData)
+            prop.text "Fetch data"    
         ]
     ]
-
 //
 // --------- Elmish -------------
 //
 
 // dotnet add package Fable.Elmish.React
-open Elmish
-open Elmish.React
 
 Program.mkProgram init update render
 |> Program.withReactSynchronous "elmish-app"
